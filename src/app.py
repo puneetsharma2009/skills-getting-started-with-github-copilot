@@ -6,6 +6,7 @@ for extracurricular activities at Mergington High School.
 """
 
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 import os
@@ -87,9 +88,11 @@ def root():
 def get_activities():
     return activities
 
+class SignupRequest(BaseModel):
+    email: str
 
 @app.post("/activities/{activity_name}/signup")
-def signup_for_activity(activity_name: str, email: str):
+def signup_for_activity(activity_name: str, signup_request: SignupRequest):
     """Sign up a student for an activity"""
     # Validate activity exists
     if activity_name not in activities:
@@ -99,9 +102,10 @@ def signup_for_activity(activity_name: str, email: str):
     activity = activities[activity_name]
 
     # Check if the student is already signed up
-    if email in activity["participants"]:
+    if signup_request.email in activity["participants"]:
         raise HTTPException(status_code=400, detail="Student is already signed up for this activity")
 
     # Add student
-    activity["participants"].append(email)
+    activity["participants"].append(signup_request.email)
+    return {"message": f"Signed up {signup_request.email} for {activity_name}"}
     return {"message": f"Signed up {email} for {activity_name}"}
